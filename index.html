@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>WordForge 5</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #121213;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+
+    #start-btn {
+      margin: 10px 0 15px;
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      background: #538d4e;
+      color: #fff;
+    }
+
+    #start-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    .timer {
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      color: #d3d6da;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-rows: repeat(5, 1fr);
+      gap: 5px;
+      margin: 10px auto 20px;
+      max-width: 320px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+
+    .cell {
+      border: 2px solid #3a3a3c;
+      min-width: 52px;
+      min-height: 52px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      user-select: none;
+    }
+
+    .cell.filled {
+      border-color: #565758;
+    }
+
+    .cell.correct {
+      background-color: #6aaa64;
+      border-color: #6aaa64;
+      color: #fff;
+    }
+
+    .cell.present {
+      background-color: #c9b458;
+      border-color: #c9b458;
+      color: #fff;
+    }
+
+    .cell.absent {
+      background-color: #3a3a3c;
+      border-color: #3a3a3c;
+      color: #fff;
+    }
+
+    .keyboard {
+      max-width: 520px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .keyboard-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .key {
+      padding: 10px 8px;
+      min-width: 32px;
+      border-radius: 4px;
+      border: none;
+      background-color: #818384;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .key-large {
+      min-width: 48px;
+    }
+
+    .key.correct {
+      background-color: #6aaa64 !important;
+    }
+
+    .key.present {
+      background-color: #c9b458 !important;
+    }
+
+    .key.absent {
+      background-color: #3a3a3c !important;
+    }
+
+    .key:active {
+      filter: brightness(1.1);
+    }
+
+    /* Shake animation for invalid word */
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .shake {
+      animation: shake 0.3s ease-in-out;
+    }
+
+    /* Result overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .result-box {
+      background-color: #1c1c1f;
+      border-radius: 8px;
+      padding: 20px 24px;
+      max-width: 320px;
+      text-align: left;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .result-box h2 {
+      margin-bottom: 10px;
+    }
+
+    .result-box p {
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+      color: #d3d6da;
+    }
+
+    .result-box strong {
+      color: #fff;
+    }
+
+    #close-result {
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px 0;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      background-color: #538d4e;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      .cell {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.2rem;
+      }
+
+      .key {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>WordForge 5</h1>
+    <button id="start-btn">Start Game</button>
+    <div id="timer" class="timer hidden">時間：0 秒</div>
+
+    <div id="grid" class="grid"></div>
+
+    <div id="keyboard" class="keyboard">
+      <div class="keyboard-row">
+        <button class="key" data-key="Q">Q</button>
+        <button class="key" data-key="W">W</button>
+        <button class="key" data-key="E">E</button>
+        <button class="key" data-key="R">R</button>
+        <button class="key" data-key="T">T</button>
+        <button class="key" data-key="Y">Y</button>
+        <button class="key" data-key="U">U</button>
+        <button class="key" data-key="I">I</button>
+        <button class="key" data-key="O">O</button>
+        <button class="key key-large" data-key="BACK">←</button>
+        <button class="key" data-key="P">P</button>
+      </div>
+      <div class="keyboard-row">
+        <button class="key" data-key="A">A</button>
+        <button class="key" data-key="S">S</button>
+        <button class="key" data-key="D">D</button>
+        <button class="key" data-key="F">F</button>
+        <button class="key" data-key="G">G</button>
+        <button class="key" data-key="H">H</button>
+        <button class="key" data-key="J">J</button>
+        <button class="key" data-key="K">K</button>
+        <button class="key" data-key="L">L</button>
+      </div>
+      <div class="keyboard-row">
+        <button class="key" data-key="Z">Z</button>
+        <button class="key" data-key="X">X</button>
+        <button class="key" data-key="C">C</button>
+        <button class="key" data-key="V">V</button>
+        <button class="key" data-key="B">B</button>
+        <button class="key" data-key="N">N</button>
+        <button class="key" data-key="M">M</button>
+        <button class="key key-large" data-key="ENTER">↲</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="result-overlay" class="overlay hidden">
+    <div class="result-box">
+      <h2 id="result-title">結果</h2>
+      <p id="result-time"></p>
+      <p id="result-word"></p>
+      <p id="result-meaning"></p>
+      <button id="close-result">OK</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== 單字庫（可以自己增加或修改） =====
+    const WORDS = [
+      { word: "ANGEL", meaning: "天使；善良的人" },
+      { word: "APPLE", meaning: "蘋果" },
+      { word: "BRAIN", meaning: "大腦；頭腦" },
+      { word: "CHAIR", meaning: "椅子" },
+      { word: "DREAM", meaning: "夢；夢想" },
+      { word: "EARTH", meaning: "地球；土壤" },
+      { word: "FAITH", meaning: "信心；信仰" },
+      { word: "GRACE", meaning: "恩典；優雅" },
+      { word: "HOUSE", meaning: "房子；住宅" },
+      { word: "LIGHT", meaning: "光；燈光" },
+      { word: "MAGIC", meaning: "魔法；神奇" },
+      { word: "MUSIC", meaning: "音樂" },
+      { word: "OCEAN", meaning: "海洋" },
+      { word: "PIZZA", meaning: "披薩" },
+      { word: "QUEEN", meaning: "女王" },
+      { word: "RIVER", meaning: "河流" },
+      { word: "SMILE", meaning: "微笑" },
+      { word: "TRAIN", meaning: "火車；訓練" },
+      { word: "WATER", meaning: "水" }
+    ];
+
+    const ROWS = 5;
+    const COLS = 5;
+
+    const gridElement = document.getElementById("grid");
+    const startBtn = document.getElementById("start-btn");
+    const timerElement = document.getElementById("timer");
+    const resultOverlay = document.getElementById("result-overlay");
+    const resultTitle = document.getElementById("result-title");
+    const resultTime = document.getElementById("result-time");
+    const resultWord = document.getElementById("result-word");
+    const resultMeaning = document.getElementById("result-meaning");
+    const closeResultBtn = document.getElementById("close-result");
+
+    let cells = [];       // 2D array [row][col]
+    let rowElements = []; // 每一列 DIV
+    let currentRow = 0;
+    let currentCol = 0;
+    let secretEntry = null;
+    let gameActive = false;
+    let startTime = null;
+    let timerInterval = null;
+
+    // 建立 5x5 格子
+    function initGrid() {
+      gridElement.innerHTML = "";
+      cells = [];
+      rowElements = [];
+      for (let r = 0; r < ROWS; r++) {
+        const rowDiv = document.createElement("div");
+        rowDiv.classList.add("row");
+        const rowCells = [];
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+          rowDiv.appendChild(cell);
+          rowCells.push(cell);
+        }
+        gridElement.appendChild(rowDiv);
+        cells.push(rowCells);
+        rowElements.push(rowDiv);
+      }
+    }
+
+    // 重置盤面與鍵盤
+    function resetBoard() {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = cells[r][c];
+          cell.textContent = "";
+          cell.className = "cell";
+        }
+        rowElements[r].classList.remove("shake");
+      }
+
+      document.querySelectorAll(".key").forEach(key => {
+        key.classList.remove("correct", "present", "absent");
+      });
+
+      currentRow = 0;
+      currentCol = 0;
+    }
+
+    // 開始遊戲
+    function startGame() {
+      if (!cells.length) {
+        initGrid();
+      }
+      resetBoard();
+      secretEntry = WORDS[Math.floor(Math.random() * WORDS.length)];
+      gameActive = true;
+
+      startTime = Date.now();
+      timerElement.classList.remove("hidden");
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimer, 200);
+
+      startBtn.textContent = "Restart";
+      hideResult();
+    }
+
+    function updateTimer() {
+      if (!gameActive || !startTime) return;
+      const elapsedMs = Date.now() - startTime;
+      const seconds = Math.floor(elapsedMs / 1000);
+      timerElement.textContent = `時間：${seconds} 秒`;
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function getCurrentGuess() {
+      let word = "";
+      for (let c = 0; c < COLS; c++) {
+        const ch = cells[currentRow][c].textContent;
+        if (!ch) return null; // 還沒填滿
+        word += ch;
+      }
+      return word.toUpperCase();
+    }
+
+    function isValidWord(word) {
+      return WORDS.some(entry => entry.word === word);
+    }
+
+    function handleLetter(letter) {
+      if (!gameActive) return;
+      if (currentCol >= COLS) return;
+      const cell = cells[currentRow][currentCol];
+      cell.textContent = letter;
+      cell.classList.add("filled");
+      currentCol++;
+    }
+
+    function handleBackspace() {
+      if (!gameActive) return;
+      if (currentCol === 0) return;
+      currentCol--;
+      const cell = cells[currentRow][currentCol];
+      cell.textContent = "";
+      cell.classList.remove("filled");
+    }
+
+    function handleEnter() {
+      if (!gameActive) return;
+      const guess = getCurrentGuess();
+      if (!guess) {
+        // 未填滿 5 個字就按 enter -> 不做事
+        return;
+      }
+
+      if (!isValidWord(guess)) {
+        // 無此單字 -> 當前列晃動
+        const rowDiv = rowElements[currentRow];
+        rowDiv.classList.remove("shake");
+        void rowDiv.offsetWidth; // 重新觸發動畫的小技巧
+        rowDiv.classList.add("shake");
+        return;
+      }
+
+      revealGuess(guess);
+    }
+
+    // 根據猜測顯示顏色並檢查是否結束
+    function revealGuess(guess) {
+      const answer = secretEntry.word;
+      const answerArr = answer.split("");
+      const guessArr = guess.split("");
+
+      const result = new Array(COLS).fill("absent");
+      const letterCount = {};
+
+      // 統計答案中各字母（先排除位置正確）
+      for (let i = 0; i < COLS; i++) {
+        if (guessArr[i] === answerArr[i]) continue;
+        const l = answerArr[i];
+        letterCount[l] = (letterCount[l] || 0) + 1;
+      }
+
+      // 先標記位置正確
+      for (let i = 0; i < COLS; i++) {
+        if (guessArr[i] === answerArr[i]) {
+          result[i] = "correct";
+        }
+      }
+
+      // 再標記 present / absent
+      for (let i = 0; i < COLS; i++) {
+        if (result[i] === "correct") continue;
+        const l = guessArr[i];
+        if (letterCount[l] > 0) {
+          result[i] = "present";
+          letterCount[l]--;
+        } else {
+          result[i] = "absent";
+        }
+      }
+
+      // 套用到格子
+      for (let i = 0; i < COLS; i++) {
+        const cell = cells[currentRow][i];
+        cell.classList.remove("correct", "present", "absent");
+        cell.classList.add(result[i]);
+      }
+
+      // 更新鍵盤顏色
+      updateKeyboardColors(guessArr, result);
+
+      const isWin = guess === answer;
+      if (isWin) {
+        gameActive = false;
+        stopTimer();
+        showResult(true);
+        return;
+      }
+
+      if (currentRow === ROWS - 1) {
+        // 用完 5 次機會
+        gameActive = false;
+        stopTimer();
+        showResult(false);
+      } else {
+        currentRow++;
+        currentCol = 0;
+      }
+    }
+
+    // 鍵盤顏色更新：correct > present > absent 優先權
+    function updateKeyboardColors(letters, resultArr) {
+      for (let i = 0; i < letters.length; i++) {
+        const letter = letters[i];
+        const status = resultArr[i]; // correct / present / absent
+
+        const keyBtn = document.querySelector(`.key[data-key="${letter}"]`);
+        if (!keyBtn) continue;
+
+        if (status === "correct") {
+          keyBtn.classList.remove("present", "absent");
+          keyBtn.classList.add("correct");
+        } else if (status === "present") {
+          if (!keyBtn.classList.contains("correct")) {
+            keyBtn.classList.remove("absent");
+            keyBtn.classList.add("present");
+          }
+        } else if (status === "absent") {
+          if (!keyBtn.classList.contains("correct") && !keyBtn.classList.contains("present")) {
+            keyBtn.classList.add("absent");
+          }
+        }
+      }
+    }
+
+    function showResult(win) {
+      const elapsedMs = Date.now() - startTime;
+      const seconds = Math.floor(elapsedMs / 1000);
+
+      resultOverlay.classList.remove("hidden");
+
+      if (win) {
+        resultTitle.textContent = "恭喜答對！";
+        resultTime.textContent = `你總共花了 ${seconds} 秒猜出答案。`;
+      } else {
+        resultTitle.textContent = "遊戲結束";
+        resultTime.textContent = `你沒有在 5 次內猜出答案。`;
+      }
+
+      resultWord.innerHTML = `正確單字：<strong>${secretEntry.word}</strong>`;
+      resultMeaning.textContent = `單字意思：${secretEntry.meaning}`;
+    }
+
+    function hideResult() {
+      resultOverlay.classList.add("hidden");
+    }
+
+    // 虛擬鍵盤點擊事件
+    document.querySelectorAll(".key").forEach(key => {
+      key.addEventListener("click", () => {
+        const k = key.dataset.key;
+        if (k === "BACK") {
+          handleBackspace();
+        } else if (k === "ENTER") {
+          handleEnter();
+        } else {
+          handleLetter(k);
+        }
+      });
+    });
+
+    // Start 與結果視窗按鈕
+    startBtn.addEventListener("click", startGame);
+    closeResultBtn.addEventListener("click", hideResult);
+
+    // 初始化格子
+    initGrid();
+  </script>
+</body>
+</html>
