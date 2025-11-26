@@ -2,7 +2,9 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
   <title>WordForge 5</title>
   <style>
     * {
@@ -214,26 +216,48 @@
       font-size: 1rem;
     }
 
-    /* ------- 手機版調整，讓畫面更滿 ------- */
+    /* ------- 手機版調整------- */
     @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
-      .game-container {
-        max-width: 100%;
-        min-height: calc(100vh - 20px);
-      }
-      .grid {
-        max-width: 100%;
-      }
-      .cell {
-        font-size: 1.2rem;
-      }
-      .key {
-        padding: 8px 6px;
-        font-size: 0.8rem;
-      }
+    body {
+     padding: 10px;
+     overflow-x: hidden;      /* 避免橫向捲動 */
     }
+
+   .game-container {
+     max-width: 100%;
+     min-height: calc(100vh - 20px);
+    }
+
+   .grid {
+     max-width: 100%;
+    }
+
+   .cell {
+     font-size: 1.2rem;
+    }
+
+   .keyboard {
+     max-width: 100%;
+    }
+
+   .keyboard-row {
+     width: 100%;
+     padding: 0 4px;
+     gap: 4px;
+    }
+
+   .key {
+     flex: 1;
+     min-width: 0;
+     padding: 8px 4px;
+     font-size: 0.8rem;
+    }
+
+  .key-large {
+    flex: 1.3;  /* ENTER / BACK 略寬一點 */
+    }
+}
+
   </style>
 </head>
 <body>
