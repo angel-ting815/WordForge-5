@@ -44,10 +44,6 @@
       color: #fff;
     }
 
-    #start-btn:hover {
-      filter: brightness(1.1);
-    }
-
     .timer {
       margin-bottom: 10px;
       font-size: 0.9rem;
@@ -55,9 +51,10 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
+    /* ★ 正方形格子：使用 aspect-ratio */
     .grid {
       display: grid;
       grid-template-rows: repeat(5, 1fr);
@@ -74,8 +71,8 @@
 
     .cell {
       border: 2px solid #3a3a3c;
-      min-width: 52px;
-      min-height: 52px;
+      width: 100%;
+      aspect-ratio: 1 / 1; /* ★ 自動正方形 */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -92,19 +89,16 @@
     .cell.correct {
       background-color: #6aaa64;
       border-color: #6aaa64;
-      color: #fff;
     }
 
     .cell.present {
       background-color: #c9b458;
       border-color: #c9b458;
-      color: #fff;
     }
 
     .cell.absent {
       background-color: #3a3a3c;
       border-color: #3a3a3c;
-      color: #fff;
     }
 
     .keyboard {
@@ -150,11 +144,7 @@
       background-color: #3a3a3c !important;
     }
 
-    .key:active {
-      filter: brightness(1.1);
-    }
-
-    /* Shake animation for invalid word */
+    /* Shake animation */
     @keyframes shake {
       0% { transform: translateX(0); }
       20% { transform: translateX(-5px); }
@@ -168,11 +158,11 @@
       animation: shake 0.3s ease-in-out;
     }
 
-    /* Result overlay */
+    /* ★ 結果視窗 overlay 必須預設 hidden */
     .overlay {
       position: fixed;
       inset: 0;
-      background-color: rgba(0,0,0,0.7);
+      background-color: rgba(0, 0, 0, 0.7);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -183,23 +173,9 @@
       background-color: #1c1c1f;
       border-radius: 8px;
       padding: 20px 24px;
-      max-width: 320px;
-      text-align: left;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
-
-    .result-box h2 {
-      margin-bottom: 10px;
-    }
-
-    .result-box p {
-      margin-bottom: 6px;
-      font-size: 0.95rem;
-      color: #d3d6da;
-    }
-
-    .result-box strong {
-      color: #fff;
+      max-width: 300px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     }
 
     #close-result {
@@ -213,21 +189,9 @@
       color: #fff;
       font-size: 1rem;
     }
-
-    @media (max-width: 480px) {
-      .cell {
-        min-width: 44px;
-        min-height: 44px;
-        font-size: 1.2rem;
-      }
-
-      .key {
-        padding: 8px 6px;
-        font-size: 0.8rem;
-      }
-    }
   </style>
 </head>
+
 <body>
   <div class="game-container">
     <h1>WordForge 5</h1>
@@ -249,8 +213,8 @@
         <button class="key" data-key="O">O</button>
         <button class="key" data-key="P">P</button>
         <button class="key key-large" data-key="BACK">←</button>
-
       </div>
+
       <div class="keyboard-row">
         <button class="key" data-key="A">A</button>
         <button class="key" data-key="S">S</button>
@@ -262,6 +226,7 @@
         <button class="key" data-key="K">K</button>
         <button class="key" data-key="L">L</button>
       </div>
+
       <div class="keyboard-row">
         <button class="key" data-key="Z">Z</button>
         <button class="key" data-key="X">X</button>
@@ -275,6 +240,7 @@
     </div>
   </div>
 
+  <!-- ★ 這裡預設 hidden -->
   <div id="result-overlay" class="overlay hidden">
     <div class="result-box">
       <h2 id="result-title">結果</h2>
@@ -286,27 +252,17 @@
   </div>
 
   <script>
-    // ===== 單字庫（可以自己增加或修改） =====
+    // ===== 單字庫 =====
     const WORDS = [
       { word: "ANGEL", meaning: "天使；善良的人" },
       { word: "APPLE", meaning: "蘋果" },
-      { word: "BRAIN", meaning: "大腦；頭腦" },
-      { word: "CHAIR", meaning: "椅子" },
-      { word: "DREAM", meaning: "夢；夢想" },
-      { word: "EARTH", meaning: "地球；土壤" },
-      { word: "FAITH", meaning: "信心；信仰" },
-      { word: "GRACE", meaning: "恩典；優雅" },
-      { word: "HOUSE", meaning: "房子；住宅" },
-      { word: "LIGHT", meaning: "光；燈光" },
-      { word: "MAGIC", meaning: "魔法；神奇" },
-      { word: "MUSIC", meaning: "音樂" },
+      { word: "BRAIN", meaning: "大腦" },
+      { word: "DREAM", meaning: "夢想" },
+      { word: "MAGIC", meaning: "魔法" },
+      { word: "WATER", meaning: "水" },
+      { word: "TRAIN", meaning: "訓練；火車" },
       { word: "OCEAN", meaning: "海洋" },
-      { word: "PIZZA", meaning: "披薩" },
-      { word: "QUEEN", meaning: "女王" },
-      { word: "RIVER", meaning: "河流" },
-      { word: "SMILE", meaning: "微笑" },
-      { word: "TRAIN", meaning: "火車；訓練" },
-      { word: "WATER", meaning: "水" }
+      { word: "SMILE", meaning: "微笑" }
     ];
 
     const ROWS = 5;
@@ -315,6 +271,7 @@
     const gridElement = document.getElementById("grid");
     const startBtn = document.getElementById("start-btn");
     const timerElement = document.getElementById("timer");
+
     const resultOverlay = document.getElementById("result-overlay");
     const resultTitle = document.getElementById("result-title");
     const resultTime = document.getElementById("result-time");
@@ -322,8 +279,8 @@
     const resultMeaning = document.getElementById("result-meaning");
     const closeResultBtn = document.getElementById("close-result");
 
-    let cells = [];       // 2D array [row][col]
-    let rowElements = []; // 每一列 DIV
+    let cells = [];
+    let rowElements = [];
     let currentRow = 0;
     let currentCol = 0;
     let secretEntry = null;
@@ -331,37 +288,36 @@
     let startTime = null;
     let timerInterval = null;
 
-    // 建立 5x5 格子
+    // 初始化格子
     function initGrid() {
       gridElement.innerHTML = "";
       cells = [];
       rowElements = [];
+
       for (let r = 0; r < ROWS; r++) {
-        const rowDiv = document.createElement("div");
-        rowDiv.classList.add("row");
+        const row = document.createElement("div");
+        row.classList.add("row");
         const rowCells = [];
+
         for (let c = 0; c < COLS; c++) {
           const cell = document.createElement("div");
           cell.classList.add("cell");
-          rowDiv.appendChild(cell);
+          row.appendChild(cell);
           rowCells.push(cell);
         }
-        gridElement.appendChild(rowDiv);
+
+        gridElement.appendChild(row);
+        rowElements.push(row);
         cells.push(rowCells);
-        rowElements.push(rowDiv);
       }
     }
 
-    // 重置盤面與鍵盤
+    // 清盤
     function resetBoard() {
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const cell = cells[r][c];
-          cell.textContent = "";
-          cell.className = "cell";
-        }
-        rowElements[r].classList.remove("shake");
-      }
+      cells.flat().forEach(cell => {
+        cell.textContent = "";
+        cell.className = "cell";
+      });
 
       document.querySelectorAll(".key").forEach(key => {
         key.classList.remove("correct", "present", "absent");
@@ -373,16 +329,15 @@
 
     // 開始遊戲
     function startGame() {
-      if (!cells.length) {
-        initGrid();
-      }
+      initGrid();
       resetBoard();
       secretEntry = WORDS[Math.floor(Math.random() * WORDS.length)];
-      gameActive = true;
 
+      gameActive = true;
       startTime = Date.now();
       timerElement.classList.remove("hidden");
-      if (timerInterval) clearInterval(timerInterval);
+
+      clearInterval(timerInterval);
       timerInterval = setInterval(updateTimer, 200);
 
       startBtn.textContent = "Restart";
@@ -390,202 +345,153 @@
     }
 
     function updateTimer() {
-      if (!gameActive || !startTime) return;
-      const elapsedMs = Date.now() - startTime;
-      const seconds = Math.floor(elapsedMs / 1000);
+      if (!gameActive) return;
+      const seconds = Math.floor((Date.now() - startTime) / 1000);
       timerElement.textContent = `時間：${seconds} 秒`;
     }
 
-    function stopTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-    }
-
     function getCurrentGuess() {
-      let word = "";
-      for (let c = 0; c < COLS; c++) {
-        const ch = cells[currentRow][c].textContent;
-        if (!ch) return null; // 還沒填滿
-        word += ch;
+      let str = "";
+      for (let i = 0; i < COLS; i++) {
+        const ch = cells[currentRow][i].textContent;
+        if (!ch) return null;
+        str += ch;
       }
-      return word.toUpperCase();
-    }
-
-    function isValidWord(word) {
-      return WORDS.some(entry => entry.word === word);
+      return str;
     }
 
     function handleLetter(letter) {
-      if (!gameActive) return;
-      if (currentCol >= COLS) return;
-      const cell = cells[currentRow][currentCol];
-      cell.textContent = letter;
-      cell.classList.add("filled");
+      if (!gameActive || currentCol >= COLS) return;
+      cells[currentRow][currentCol].textContent = letter;
+      cells[currentRow][currentCol].classList.add("filled");
       currentCol++;
     }
 
-    function handleBackspace() {
-      if (!gameActive) return;
-      if (currentCol === 0) return;
+    function handleBack() {
+      if (!gameActive || currentCol === 0) return;
       currentCol--;
-      const cell = cells[currentRow][currentCol];
-      cell.textContent = "";
-      cell.classList.remove("filled");
+      cells[currentRow][currentCol].textContent = "";
+      cells[currentRow][currentCol].classList.remove("filled");
+    }
+
+    function isValidWord(word) {
+      return WORDS.some(e => e.word === word);
     }
 
     function handleEnter() {
       if (!gameActive) return;
       const guess = getCurrentGuess();
-      if (!guess) {
-        // 未填滿 5 個字就按 enter -> 不做事
-        return;
-      }
+      if (!guess) return;
 
       if (!isValidWord(guess)) {
-        // 無此單字 -> 當前列晃動
-        const rowDiv = rowElements[currentRow];
-        rowDiv.classList.remove("shake");
-        void rowDiv.offsetWidth; // 重新觸發動畫的小技巧
-        rowDiv.classList.add("shake");
+        rowElements[currentRow].classList.remove("shake");
+        void rowElements[currentRow].offsetWidth;
+        rowElements[currentRow].classList.add("shake");
         return;
       }
 
       revealGuess(guess);
     }
 
-    // 根據猜測顯示顏色並檢查是否結束
     function revealGuess(guess) {
-      const answer = secretEntry.word;
-      const answerArr = answer.split("");
+      const ans = secretEntry.word;
+      const ansArr = ans.split("");
       const guessArr = guess.split("");
 
-      const result = new Array(COLS).fill("absent");
+      const result = new Array(5).fill("absent");
       const letterCount = {};
 
-      // 統計答案中各字母（先排除位置正確）
       for (let i = 0; i < COLS; i++) {
-        if (guessArr[i] === answerArr[i]) continue;
-        const l = answerArr[i];
-        letterCount[l] = (letterCount[l] || 0) + 1;
+        if (guessArr[i] !== ansArr[i]) {
+          letterCount[ansArr[i]] = (letterCount[ansArr[i]] || 0) + 1;
+        }
       }
 
-      // 先標記位置正確
       for (let i = 0; i < COLS; i++) {
-        if (guessArr[i] === answerArr[i]) {
+        if (guessArr[i] === ansArr[i]) {
           result[i] = "correct";
         }
       }
 
-      // 再標記 present / absent
       for (let i = 0; i < COLS; i++) {
         if (result[i] === "correct") continue;
-        const l = guessArr[i];
-        if (letterCount[l] > 0) {
+        if (letterCount[guessArr[i]] > 0) {
           result[i] = "present";
-          letterCount[l]--;
-        } else {
-          result[i] = "absent";
+          letterCount[guessArr[i]]--;
         }
       }
 
-      // 套用到格子
       for (let i = 0; i < COLS; i++) {
-        const cell = cells[currentRow][i];
-        cell.classList.remove("correct", "present", "absent");
-        cell.classList.add(result[i]);
+        cells[currentRow][i].classList.add(result[i]);
       }
 
-      // 更新鍵盤顏色
-      updateKeyboardColors(guessArr, result);
+      updateKeyboard(guessArr, result);
 
-      const isWin = guess === answer;
-      if (isWin) {
+      if (guess === ans) {
         gameActive = false;
-        stopTimer();
+        clearInterval(timerInterval);
         showResult(true);
         return;
       }
 
       if (currentRow === ROWS - 1) {
-        // 用完 5 次機會
         gameActive = false;
-        stopTimer();
+        clearInterval(timerInterval);
         showResult(false);
-      } else {
-        currentRow++;
-        currentCol = 0;
+        return;
       }
+
+      currentRow++;
+      currentCol = 0;
     }
 
-    // 鍵盤顏色更新：correct > present > absent 優先權
-    function updateKeyboardColors(letters, resultArr) {
+    function updateKeyboard(letters, resultArr) {
       for (let i = 0; i < letters.length; i++) {
-        const letter = letters[i];
-        const status = resultArr[i]; // correct / present / absent
+        const key = document.querySelector(`.key[data-key="${letters[i]}"]`);
+        if (!key) return;
 
-        const keyBtn = document.querySelector(`.key[data-key="${letter}"]`);
-        if (!keyBtn) continue;
-
-        if (status === "correct") {
-          keyBtn.classList.remove("present", "absent");
-          keyBtn.classList.add("correct");
-        } else if (status === "present") {
-          if (!keyBtn.classList.contains("correct")) {
-            keyBtn.classList.remove("absent");
-            keyBtn.classList.add("present");
+        if (resultArr[i] === "correct") {
+          key.classList.remove("present", "absent");
+          key.classList.add("correct");
+        } else if (resultArr[i] === "present") {
+          if (!key.classList.contains("correct")) {
+            key.classList.add("present");
           }
-        } else if (status === "absent") {
-          if (!keyBtn.classList.contains("correct") && !keyBtn.classList.contains("present")) {
-            keyBtn.classList.add("absent");
+        } else {
+          if (!key.classList.contains("correct") &&
+              !key.classList.contains("present")) {
+            key.classList.add("absent");
           }
         }
       }
     }
 
     function showResult(win) {
-      const elapsedMs = Date.now() - startTime;
-      const seconds = Math.floor(elapsedMs / 1000);
-
       resultOverlay.classList.remove("hidden");
 
-      if (win) {
-        resultTitle.textContent = "恭喜答對！";
-        resultTime.textContent = `你總共花了 ${seconds} 秒猜出答案。`;
-      } else {
-        resultTitle.textContent = "遊戲結束";
-        resultTime.textContent = `你沒有在 5 次內猜出答案。`;
-      }
-
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      resultTitle.textContent = win ? "恭喜答對！" : "遊戲結束";
+      resultTime.textContent = `時間：${timeSpent} 秒`;
       resultWord.innerHTML = `正確單字：<strong>${secretEntry.word}</strong>`;
-      resultMeaning.textContent = `單字意思：${secretEntry.meaning}`;
+      resultMeaning.textContent = `意思：${secretEntry.meaning}`;
     }
 
     function hideResult() {
       resultOverlay.classList.add("hidden");
     }
 
-    // 虛擬鍵盤點擊事件
-    document.querySelectorAll(".key").forEach(key => {
-      key.addEventListener("click", () => {
-        const k = key.dataset.key;
-        if (k === "BACK") {
-          handleBackspace();
-        } else if (k === "ENTER") {
-          handleEnter();
-        } else {
-          handleLetter(k);
-        }
+    document.querySelectorAll(".key").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.key;
+        if (key === "BACK") handleBack();
+        else if (key === "ENTER") handleEnter();
+        else handleLetter(key);
       });
     });
 
-    // Start 與結果視窗按鈕
     startBtn.addEventListener("click", startGame);
     closeResultBtn.addEventListener("click", hideResult);
 
-    // 初始化格子
-    initGrid();
   </script>
 </body>
 </html>
