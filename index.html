@@ -2,9 +2,9 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
+  <!-- 禁止縮放，避免雙擊放大 -->
   <meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>WordForge 5</title>
   <style>
     * {
@@ -26,6 +26,7 @@
       align-items: flex-start;
       min-height: 100vh;
       padding: 20px;
+      overflow-x: hidden; /* 避免橫向卷動 */
     }
 
     .game-container {
@@ -70,7 +71,7 @@
       display: none !important;
     }
 
-    /* ------- 正方形格子 ------- */
+    /* ----- 正方形格子 ----- */
     .grid {
       display: grid;
       grid-template-rows: repeat(5, 1fr);
@@ -89,7 +90,7 @@
     .cell {
       border: 2px solid #3a3a3c;
       width: 100%;
-      aspect-ratio: 1 / 1; /* 一定是正方形 */
+      aspect-ratio: 1 / 1; /* 保證正方形 */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -118,11 +119,11 @@
       border-color: #3a3a3c;
     }
 
-    /* ------- 鍵盤 ------- */
+    /* ----- 鍵盤 ----- */
     .keyboard {
       width: 100%;
       max-width: 520px;
-      margin: auto 0 0;
+      margin-top: auto;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -164,7 +165,7 @@
       background-color: #3a3a3c !important;
     }
 
-    /* Shake animation */
+    /* 抖動動畫（沒這個單字時） */
     @keyframes shake {
       0% { transform: translateX(0); }
       20% { transform: translateX(-5px); }
@@ -216,48 +217,46 @@
       font-size: 1rem;
     }
 
-    /* ------- 手機版調整------- */
+    /* ----- 手機版：鍵盤自動縮放，不超出螢幕 ----- */
     @media (max-width: 600px) {
-    body {
-     padding: 10px;
-     overflow-x: hidden;      /* 避免橫向捲動 */
-    }
+      body {
+        padding: 10px;
+      }
 
-   .game-container {
-     max-width: 100%;
-     min-height: calc(100vh - 20px);
-    }
+      .game-container {
+        max-width: 100%;
+        min-height: calc(100vh - 20px);
+      }
 
-   .grid {
-     max-width: 100%;
-    }
+      .grid {
+        max-width: 100%;
+      }
 
-   .cell {
-     font-size: 1.2rem;
-    }
+      .cell {
+        font-size: 1.2rem;
+      }
 
-   .keyboard {
-     max-width: 100%;
-    }
+      .keyboard {
+        max-width: 100%;
+      }
 
-   .keyboard-row {
-     width: 100%;
-     padding: 0 4px;
-     gap: 4px;
-    }
+      .keyboard-row {
+        width: 100%;
+        padding: 0 4px;
+        gap: 4px;
+      }
 
-   .key {
-     flex: 1;
-     min-width: 0;
-     padding: 8px 4px;
-     font-size: 0.8rem;
-    }
+      .key {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 4px;
+        font-size: 0.8rem;
+      }
 
-  .key-large {
-    flex: 1.3;  /* ENTER / BACK 略寬一點 */
+      .key-large {
+        flex: 1.3;
+      }
     }
-}
-
   </style>
 </head>
 <body>
@@ -340,8 +339,10 @@
       { word: "WATER", meaning: "水" }
     ];
 
-    // ===== 線上 5-letter 英文字庫 =====
-    const REMOTE_WORDLIST_URL = "https://darkermango.github.io/5-Letter-words/words.json";
+    // ===== 線上 5-letter 單字庫：Knuth sgb-words（含 HOVEL 等） =====
+    // raw 文字檔，每行一個單字
+    const REMOTE_WORDLIST_URL =
+      "https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt";
 
     const ROWS = 5;
     const COLS = 5;
@@ -366,27 +367,23 @@
     let startTime = null;
     let timerInterval = null;
 
-    // 所有合法單字集合（本地 + 線上）
+    // 所有合法單字（本地題庫 + 線上字庫）
     const validWords = new Set();
+    WORDS.forEach(e => validWords.add(e.word)); // 先加本地單字
 
-    // 先把本地題庫加入 validWords
-    WORDS.forEach(e => validWords.add(e.word));
-
-    // 讀取線上字庫
     async function loadRemoteWords() {
       try {
         const res = await fetch(REMOTE_WORDLIST_URL);
         if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json(); // 一堆 5-letter 字串，都是小寫
-        data.forEach(w => {
-          const upper = (w || "").trim().toUpperCase();
+        const text = await res.text(); // 純文字，每行一個字
+        text.split(/\s+/).forEach(w => {
+          const upper = w.trim().toUpperCase();
           if (upper.length === 5) validWords.add(upper);
         });
         startBtn.disabled = false;
         startBtn.textContent = "Start Game";
       } catch (err) {
         console.error("載入線上字庫失敗：", err);
-        // 即使失敗，還是可以用本地題庫玩
         startBtn.disabled = false;
         startBtn.textContent = "Start Game (offline words)";
       }
@@ -402,14 +399,12 @@
         const row = document.createElement("div");
         row.classList.add("row");
         const rowCells = [];
-
         for (let c = 0; c < COLS; c++) {
           const cell = document.createElement("div");
           cell.classList.add("cell");
           row.appendChild(cell);
           rowCells.push(cell);
         }
-
         gridElement.appendChild(row);
         rowElements.push(row);
         cells.push(rowCells);
@@ -464,7 +459,7 @@
     }
 
     function isValidWord(word) {
-      return validWords.has(word);
+      return validWords.has(word.toUpperCase());
     }
 
     function handleLetter(letter) {
@@ -604,7 +599,23 @@
     startBtn.addEventListener("click", startGame);
     closeResultBtn.addEventListener("click", hideResult);
 
-    // 一載入就去抓線上字庫
+    // iOS Safari 雙擊放大防呆：攔截 300ms 內的連續 touchend
+    (function preventDoubleTapZoom() {
+      let lastTouchEnd = 0;
+      document.addEventListener(
+        "touchend",
+        function (event) {
+          const now = Date.now();
+          if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+          }
+          lastTouchEnd = now;
+        },
+        { passive: false }
+      );
+    })();
+
+    // 載入線上單字庫
     loadRemoteWords();
   </script>
 </body>
